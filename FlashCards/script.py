@@ -162,14 +162,16 @@ if (len(file_list) < 1):
     
     # Open the file for writing
     with open(file_name_clean, "x", newline="") as csv_file:
-        field_names = ["side A", "side B"]
-        csv_writer = csv.DictWriter(csv_file, delimiter=",", \
-                quotechar="^", quoting=csv.QUOTE_MINIMAL, \
-                fieldnames = field_names)
-        csv_writer.writeheader()
+        # field_names = ["side A", "side B"]
+        csv_writer = csv.writer(csv_file, delimiter=",", \
+                quotechar="^", quoting=csv.QUOTE_MINIMAL)
+        # csv_writer.writeheader()
+        # Write the file name row
+        csv_writer.writerow([deck_title])
         # Loop through the new deck and write each line
         for card in new_deck:
-            csv_writer.writerow({"side A": card[0], "side B": card[1]})
+            # csv_writer.writerow({"side A": card[0], "side B": card[1]})
+            csv_writer.writerow([card[0], card [1]])
 
     time.sleep(sleep_time / 3)
     for i in range(3):
