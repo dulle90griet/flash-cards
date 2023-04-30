@@ -3,6 +3,7 @@ import time
 import re # Regex, for stripping illegal chars from file names
 from os import listdir
 from os.path import isfile, join, dirname, abspath
+from random import randint
 
 # Generates an ASCII title box and returns it as a string
 def title_box(title_string, new_line = 0):
@@ -220,6 +221,7 @@ else:
         while taking_input:
             # Get the file number user input
             file_number = input(": ")
+            blank_line()
             # Strip out any character that isn't a number
             file_number = "".join(_ for _ in file_number \
                     if _ in "0123456789")
@@ -237,10 +239,90 @@ else:
                     continue
                 # ADD LATER - Check the file still exists?
                 taking_input = False # Exit the input loop
+        # We now have the user's selection, so exit the listing loop
+        listing = False
 
-        # We now have the user's file selection, so load the file
-        with open(file_list[file_number - 1], "r") as csv_file:
-            pass
+    # . . . and load the chosen file
+    with open(file_list[file_number - 1], "r") as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=",", \
+                quotechar="^")
+        loaded_deck = list(csv_reader)
+        loaded_title = loaded_deck[0][0]
+        print(title_box(loaded_title.upper(), 1))
+        # Populate available cards list (this will be easy to methodize)
+        available_cards = [loaded_deck[i] for i in range(1, \
+                len(loaded_deck))]
+        # Ask the user for round size
+        default_round_size = 10
+        round_size = input("How many cards would you like to be " \
+                "tested on per round? (Round size is capped at deck " \
+                "size.)\n: ")
+        # Strip out non-numerical characters
+        round_size = "".join(_ for _ in round_size if _ in "0123456789")
+        # Set to default if blank
+        round_size = default_round_size if round_size == "" \
+                else int(round_size)
+        # Cap round size at total deck size
+        if round_size > len(available_cards):
+            round_size = len(available_cards)
+        blank_line()
+
+        # Begin the testing loop
+        testing = True
+        asked_total = 0
+        asked_this_round = 0
+        questions_correct = 0
+        while testing:
+            # First, check whether we've already finished the round
+            if asked_this_round >= round_size:
+                print("Round complete! So far you've got " \
+                        f"{questions_correct} of {asked_total} " \
+                        "correct.\n")
+                user_input = input("Do you want to continue? [Y/N] " \
+                        "\n: ").upper()
+                if user_input == "N":
+                    # End the testing session
+                    # Later this should return us to loading
+                    testing = False
+                    break
+                else:
+                    # Initiate the new round
+                    asked_this_round = 0
+            # Randomly select one of the available cards
+            card_no = randint(0, len(available_cards)-1)
+            cur_card = available_cards[card_no]
+            # Print the card
+            print("Press [Enter] to flip the card.")
+            print("Side A:\n\n      " + cur_card[0] + "\n")
+            user_input = input("")
+            print("Side B:\n\n      " + cur_card[1] + "\n")
+            user_input = input("Type Y or press [Enter] if right. " \
+                    "Type N if wrong.\n").upper()
+            blank_line()
+            if user_input != "N":
+                # Increment the correct answers counter
+                questions_correct += 1
+            # Increment the questions asked counters
+            asked_total += 1
+            asked_this_round += 1
+            # Remove the card from the working deck
+            available_cards = available_cards[:card_no] + \
+                    available_cards[card_no+1:]
+            # Check we haven't exhausted the deck, and end if so
+            if len(available_cards) < 1:
+                print("Well done! You've completed the deck. " \
+                        f"You got {questions_correct} of " \
+                        f"{asked_total} correct.")
+                # End the testing session
+                # Later this should return us to loading
+                testing = False
+                break
+            # If we are continuing, re-print the deck's title
+            print(title_box(loaded_title.upper(), 1))
+blank_line()
+
+
+
 
 
         
