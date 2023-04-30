@@ -47,6 +47,8 @@ time.sleep(sleep_time)
 # Later I need to update this to use Python 3's os.scandir iterator
 file_list = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 file_list = [f for f in file_list if f.lower()[-4:] == ".csv"]
+# Sort the list of files alphabetically, without regard for capitals
+file_list.sort(key=str.lower)
 
 # If there are no CSVs yet, prompt the user to create one
 if (len(file_list) < 1):
@@ -169,8 +171,79 @@ if (len(file_list) < 1):
         for card in new_deck:
             csv_writer.writerow({"side A": card[0], "side B": card[1]})
 
+    time.sleep(sleep_time / 3)
+    for i in range(3):
+        print(".")
+        time.sleep(sleep_time / 3)
 
-# Otherwise, give them the loading list
+    print("\nDeck saved successfully.")
+
+    # At this point when properly functionized we'll return to 
+    # what is now line 43
+    print("Loading cards . . .\n")
+    time.sleep(sleep_time)
+
+# Otherwise, files exist, so give the user the loading list
+else:
+    screen = 0 # Tracks which screen of 10 files we're up to
+    listing = True
+    final_screen = False
+    files_per_screen = 10
+    print("Which deck would you like to open first?\n")
+    while listing:
+        msg = "Enter a number to make a selection"
+        # Check this isn't the final screen of files
+        if (len(file_list) < (screen + 1) * files_per_screen):
+            final_screen = True
+        else:
+            msg += ", or just press [Enter] to see more files"
+        # Should add a 'files x-x of x' message here
+        print(msg + ".\n")
+        list_size = len(file_list)
+        num_width = len(str(list_size + 1))
+        tab_size = num_width + 5
+        files_listed = screen * files_per_screen
+        i = files_listed
+        for i in range(files_listed, files_listed + files_per_screen):
+            if i < list_size:
+                line_str = f"{i + 1}"
+                for j in range(tab_size - len(line_str)):
+                    line_str += " "
+                line_str += file_list[i]
+                print(line_str)
+        blank_line()
+
+        # User input loop for file selection
+        taking_input = True
+        while taking_input:
+            # Get the file number user input
+            file_number = input(": ")
+            # Strip out any character that isn't a number
+            file_number = "".join(_ for _ in file_number \
+                    if _ in "0123456789")
+            # If input is blank, move to the next screen
+            if file_number == "":
+                screen += 1
+                taking_input = False # Exit the input loop
+            else:
+                # Check the file number is in range
+                file_number = int(file_number)
+                if file_number > (list_size + 1):
+                    # If out of range, print an error message
+                    print("There isn't a file with that number. " \
+                            "Please try again.\n")
+                    continue
+                # ADD LATER - Check the file still exists?
+                taking_input = False # Exit the input loop
+
+        # We now have the user's file selection, so load the file
+        with open(file_list[file_number - 1], "r") as csv_file:
+            pass
+
+
+        
+
+
 
 
 # # Get a list of the dict's keys
