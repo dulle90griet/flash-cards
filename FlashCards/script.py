@@ -164,6 +164,66 @@ def deck_creation_loop():
         print("\nDeck saved successfully.")
         blank_line()
 
+# LOOP - list all available files and return the user's selection
+def file_selection_loop():
+    screen = 0 # Tracks which screen of 10 files we're up to
+    listing = True
+    final_screen = False
+    files_per_screen = 10
+    print("Which deck would you like to open first?\n")
+    while listing:
+        list_size = len(file_list)
+        files_listed = screen * files_per_screen
+        print(f"Showing files {files_listed+1} to "
+              f"{files_listed+files_per_screen} of {list_size}.")
+        msg = "Enter a number to make a selection"
+        # Check this isn't the final screen of files
+        if (list_size < (screen + 1) * files_per_screen):
+            final_screen = True
+        else:
+            msg += ", or press [Enter] to see more files"
+        # Should add a 'files x-x of x' message here
+        print(msg + ".\n")
+        # Print our two-column table of file numbers and file names
+        num_width = len(str(list_size + 1))
+        tab_size = num_width + 5
+        for i in range(files_listed, files_listed + files_per_screen):
+            if i < list_size:
+                line_str = f"{i + 1}"
+                for j in range(tab_size - len(line_str)):
+                    line_str += " "
+                line_str += file_list[i]
+                print(line_str)
+        blank_line()
+
+        # User input loop for file selection
+        taking_input = True
+        while taking_input:
+            # Get the file number user input
+            file_number = input(": ")
+            blank_line()
+            # Strip out any character that isn't a number
+            file_number = "".join(_ for _ in file_number
+                                  if _ in "0123456789")
+            # If input is blank, move to the next screen
+            if file_number == "":
+                screen += 1
+                taking_input = False # Exit the input loop
+            else:
+                # Check the file number is in range
+                file_number = int(file_number)
+                if file_number > (list_size + 1):
+                    # If out of range, print an error message
+                    print("There isn't a file with that number. "
+                            "Please try again.\n")
+                    continue # Go back to the loop's beginning
+                # ADD LATER - Check the file still exists?
+                taking_input = False # Exit the input loop
+                # We now have the user's selection, so exit the listing loop
+                listing = False
+    # And return the result
+    return file_number
+
 # Cleans up a file name ready for writing, and avoids
 # overwriting existing files
 def file_name_handler(name, extension, max_len):
@@ -225,59 +285,11 @@ if (len(file_list) < 1):
 
 # Otherwise, files exist, so give the user the loading list
 else:
-    screen = 0 # Tracks which screen of 10 files we're up to
-    listing = True
-    final_screen = False
-    files_per_screen = 10
-    print("Which deck would you like to open first?\n")
-    while listing:
-        msg = "Enter a number to make a selection"
-        # Check this isn't the final screen of files
-        if (len(file_list) < (screen + 1) * files_per_screen):
-            final_screen = True
-        else:
-            msg += ", or just press [Enter] to see more files"
-        # Should add a 'files x-x of x' message here
-        print(msg + ".\n")
-        list_size = len(file_list)
-        num_width = len(str(list_size + 1))
-        tab_size = num_width + 5
-        files_listed = screen * files_per_screen
-        i = files_listed
-        for i in range(files_listed, files_listed + files_per_screen):
-            if i < list_size:
-                line_str = f"{i + 1}"
-                for j in range(tab_size - len(line_str)):
-                    line_str += " "
-                line_str += file_list[i]
-                print(line_str)
-        blank_line()
+    # This will be the place to ask whether they'd like to open
+    # an existing deck or make a new one one
 
-        # User input loop for file selection
-        taking_input = True
-        while taking_input:
-            # Get the file number user input
-            file_number = input(": ")
-            blank_line()
-            # Strip out any character that isn't a number
-            file_number = "".join(_ for _ in file_number \
-                    if _ in "0123456789")
-            # If input is blank, move to the next screen
-            if file_number == "":
-                screen += 1
-                taking_input = False # Exit the input loop
-            else:
-                # Check the file number is in range
-                file_number = int(file_number)
-                if file_number > (list_size + 1):
-                    # If out of range, print an error message
-                    print("There isn't a file with that number. " \
-                            "Please try again.\n")
-                    continue
-                # ADD LATER - Check the file still exists?
-                taking_input = False # Exit the input loop
-        # We now have the user's selection, so exit the listing loop
-        listing = False
+    # Run the file selection loop and store the selected file number
+    file_number = file_selection_loop()
 
     # . . . and load the chosen file
     with open(file_list[file_number - 1], "r") as csv_file:
