@@ -5,14 +5,28 @@ from os import listdir
 from os.path import isfile, join, dirname, abspath
 from random import randint
 
+# Class for card decks and their titles
+class CardDeck:
+    def __init__(self, title="User Flash Card Deck", cards=[]):
+        self.title = title
+        self.cards = cards
+        self.size = len(cards)
+
+    def add_card(sideA, sideB):
+        self.cards.append([sideA, sideB])
+        self.size += 1
+
+    def remove_card():
+        pass
+
 # Generates an ASCII title box and returns it as a string
 def title_box(title_string, new_line = 0):
     # First, generate the title string and space it
     # title_string = f"CARD NO. {card_no + 1}"
     for i in range(1, len(title_string)):
         insert_point = (i * 2) - 1
-        title_string = title_string[:insert_point] + " " + \
-                title_string[insert_point:]
+        title_string = (title_string[:insert_point] + " " +
+                title_string[insert_point:])
 
     # Next, generate the card with border
     top_bottom = "00=="
@@ -33,62 +47,57 @@ def title_box(title_string, new_line = 0):
 def blank_line():
     print("")
 
-# Define variables
-mypath = dirname(abspath(__file__))
-sleep_time = 1
-max_file_name_len = 20
+# Takes user input and handles exceptions
+def input_loop(prompt, error, times):
+    # This should give an initial prompt and an optionally customizable
+    # error message. Probably I should use a Class here.
+    # If the user's input is not accepted it should show the error
+    # message (times) times before finally re-presenting the input.
+    # Every (times) times it will repeat the initial title card and 
+    # prompt.
+    pass
 
-# Deliver welcome message and check for files
-# I'll replace this later with an ASCII title graphic
-print("Welcome to PyFlashCards!\n")
-print("Loading cards . . .\n")
-time.sleep(sleep_time)
-
-# Create a list of CSVs in the script's directory
-# Later I need to update this to use Python 3's os.scandir iterator
-file_list = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-file_list = [f for f in file_list if f.lower()[-4:] == ".csv"]
-# Sort the list of files alphabetically, without regard for capitals
-file_list.sort(key=str.lower)
-
-# If there are no CSVs yet, prompt the user to create one
-if (len(file_list) < 1):
-    print("It seems no card decks exist yet. We'd better make one. \n")
+# The loop that handles new deck creation (card and title input)
+# and saving the created deck to CSV
+def deck_creation_loop():
+    print(title_box("New Deck Creation Mode", 1))
     time.sleep(sleep_time)
     print("Each flash card should consist of two paired values.\n")
     time.sleep(sleep_time)
-    print("These " \
-            "might be a question and an answer, a heading and what " \
-            "falls under it, or just two things that belong together. \n")
+    print("These might be a question and an answer, a heading and what "
+          "falls under it, or just two things that belong together. \n")
     time.sleep(sleep_time)
-    print("Try to keep it consistent within each deck. But also, don't " \
-            "sweat it too much.\n")
+    print("Try to keep it consistent within each deck. But also, don't "
+          "sweat it too much.\n")
     time.sleep(sleep_time)
+
     i = 0
     new_deck = []
     taking_content = True
-
     while(taking_content):
         print(title_box(f"CARD NO. {i + 1}", 1))
         if i == 0:
             print("What would you like your first card to be?\n")
-        valueA = input(f"Enter side A for card {i+1}, " \
-                "then press [Enter].\n: ")
-        valueB = input(f"Enter side B for card {i+1}, " \
-                "then press [Enter].\n: ")
+            valueA = input(f"Enter side A for card {i+1}, "
+                           "then press [Enter].\n: ")
+        else:
+            valueA = input(f"Enter side A for card {i + 1} if "
+                    "you'd like to continue, or type N if you're "
+                    "finished.\n: ")
+            # if(more_to_add in ["N", "NO"]):
+            #     taking_content = False
+            if(valueA.upper() in ["N", "NO"]):
+                break
+        valueB = input(f"Enter side B for card {i+1}, "
+                       "then press [Enter].\n: ")
         new_deck.append([valueA, valueB])
         print(f"\nGot it. Value A is '{valueA}'. Value B is '{valueB}'.")
-        more_to_add = input("Press [Enter] if you would like to add " \
-                "another card, or type N if you're finished. " \
-                "\n: ").upper()
-        if(more_to_add in ["N", "NO"]):
-            taking_content = False
-        else:
-            i += 1
         blank_line()
+        i += 1
 
-    deck_title = input("Finally, what title would you like to give " \
-            "this deck? (Up to 30 characters.)\n: ")[:30]
+    deck_title = input("Finally, what title would you like to give "
+            "this deck? (Up to 30 characters. This can be different "
+            "to its file name.)\n: ")[:30]
 
     # Print out the completed deck, with title box
     print("\nGreat. Here's your deck in review:\n")
@@ -117,69 +126,97 @@ if (len(file_list) < 1):
     time.sleep(sleep_time * 2 / 3)
 
     # Prompt the user for a filename
-    file_name = input("If you would like to save this deck, please " \
-            "enter a file name up to 20 characters. If you would like " \
-            "to cancel, type CANCEL.\n: ")[:max_file_name_len]
+    file_name = input("If you would like to save this deck, please "
+            f"enter a file name up to {max_file_name_len} characters. "
+            "If you would like to cancel, type CANCEL."
+            "\n: ")[:max_file_name_len]
     time.sleep(sleep_time)
-
-    if file_name == "CANCEL":
+    if file_name.upper() == "CANCEL":
         print("Cancelling.\n")
         time.sleep(sleep_time)
-        restart = input("Would you like to start again? [Y/N]\n" \
+        restart = input("Would you like to start again? [Y/N]\n"
                 "If not, PyFlashCards will quit.\n: ").upper()
         if(restart in ["Y", "YES", ""]):
-            # TK -- call deck creation function
-            pass
+            deck_creation_loop()
         else:
             print("Quitting PyFlashCards.\n")
             time.sleep(sleep_time)
             exit()
     else:
-        # Strip the filename of illegal characters
-        file_name_clean = re.sub(r"\W+", "", file_name)
-
-        # If the filename is already taken, add a number to the end
-        i = 0
-        while isfile(file_name_clean + ".csv"):
-            i += 1
-            affix_str = f"({i})"
-            # Calculate available length left after addition of affix
-            new_max_len = max_file_name_len - len(affix_str)
-            if i > 1:
-                # An affix already exists. Take the length of
-                # everything from the last opening parenthesis in the
-                # file name onwards, inclusive
-                affix_len = len(file_name_clean.split("(")[1]) + 1
-                # Use it to strip out the old affix
-                end_indx = len(file_name_clean) - affix_len
-                file_name_clean = file_name_clean[:end_indx]
-            # Make sure there's space for the new affix, and add it
-            if len(file_name_clean) > new_max_len:
-                file_name_clean = file_name_clean[:new_max_len]
-            file_name_clean += affix_str
-
-        # Finally, add the filetype extension
-        file_name_clean += ".csv"
+        file_name_clean = file_name_handler(file_name, "csv",
+                                            max_file_name_len)
     
-    # Open the file for writing
-    with open(file_name_clean, "x", newline="") as csv_file:
-        # field_names = ["side A", "side B"]
-        csv_writer = csv.writer(csv_file, delimiter=",", \
-                quotechar="^", quoting=csv.QUOTE_MINIMAL)
-        # csv_writer.writeheader()
-        # Write the file name row
-        csv_writer.writerow([deck_title])
-        # Loop through the new deck and write each line
-        for card in new_deck:
-            # csv_writer.writerow({"side A": card[0], "side B": card[1]})
-            csv_writer.writerow([card[0], card [1]])
+        # Open the file for writing
+        with open(file_name_clean, "x", newline="") as csv_file:
+            csv_writer = csv.writer(csv_file, delimiter=",", \
+                    quotechar="^", quoting=csv.QUOTE_MINIMAL)
+            # Write the file name row
+            csv_writer.writerow([deck_title])
+            # Loop through the new deck and write each line
+            for card in new_deck:
+                csv_writer.writerow([card[0], card [1]])
 
-    time.sleep(sleep_time / 3)
-    for i in range(3):
-        print(".")
         time.sleep(sleep_time / 3)
+        for i in range(3):
+            print(".")
+            time.sleep(sleep_time / 3)
 
-    print("\nDeck saved successfully.")
+        print("\nDeck saved successfully.")
+        blank_line()
+
+# Cleans up a file name ready for writing, and avoids
+# overwriting existing files
+def file_name_handler(name, extension, max_len):
+    # Strip the filename of illegal characters
+    name = re.sub(r"\W+", "", name)
+
+    # If the filename is already taken, add a number to the end
+    i = 0
+    while isfile(name + "." + extension):
+        i += 1
+        affix_str = f"({i})"
+        # Calculate available length left after addition of affix
+        new_max_len = max_len - len(affix_str)
+        if i > 1:
+            # An affix already exists. Take the length of
+            # everything from the last opening parenthesis in the
+            # file name onwards, inclusive
+            affix_len = len(name.split("(")[1]) + 1
+            # Use it to strip out the old affix
+            end_indx = len(name) - affix_len
+            name = name[:end_indx]
+        # Make sure there's space for the new affix, and add it
+        if len(name) > new_max_len:
+            name = name[:new_max_len]
+        name += affix_str
+
+    # Finally, add the filetype extension and return the result
+    name += "." + extension
+    return name
+
+
+# Define variables
+mypath = dirname(abspath(__file__))
+sleep_time = 1
+max_file_name_len = 40
+
+# Deliver welcome message and check for files
+# I'll replace this later with an ASCII title graphic
+print("Welcome to PyFlashCards!\n")
+print("Loading cards . . .\n")
+time.sleep(sleep_time)
+
+# Create a list of CSVs in the script's directory
+# Later I need to update this to use Python 3's os.scandir iterator
+file_list = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+file_list = [f for f in file_list if f.lower()[-4:] == ".csv"]
+# Sort the list of files alphabetically, without regard for capitals
+file_list.sort(key=str.lower)
+
+# If there are no CSVs yet, prompt the user to create one
+if (len(file_list) < 1):
+# if (1 == 1):
+    deck_creation_loop()
 
     # At this point when properly functionized we'll return to 
     # what is now line 43
@@ -280,6 +317,7 @@ else:
                         "correct.\n")
                 user_input = input("Do you want to continue? [Y/N] " \
                         "\n: ").upper()
+                blank_line()
                 if user_input == "N":
                     # End the testing session
                     # Later this should return us to loading
@@ -306,8 +344,9 @@ else:
             asked_total += 1
             asked_this_round += 1
             # Remove the card from the working deck
-            available_cards = available_cards[:card_no] + \
-                    available_cards[card_no+1:]
+            available_cards.pop(card_no)
+            # available_cards = available_cards[:card_no] + \
+                    # available_cards[card_no+1:]
             # Check we haven't exhausted the deck, and end if so
             if len(available_cards) < 1:
                 print("Well done! You've completed the deck. " \
