@@ -1,9 +1,16 @@
+### TO DO LIST
+### > 'If not, PyFlashCards will quit.' - Instead return to main menu
+### > Complete main_menu_loop() functionalization
+### > Functionalize testing code as testing_loop() function
+### > Implement CardDeck class
+
 import csv
 import time
 import re # Regex, for stripping illegal chars from file names
 from os import listdir
 from os.path import isfile, join, dirname, abspath
 from random import randint
+
 
 # Class for card decks and their titles
 class CardDeck:
@@ -18,6 +25,7 @@ class CardDeck:
 
     def remove_card():
         pass
+
 
 # Generates an ASCII title box and returns it as a string
 def title_box(title_string, new_line = 0):
@@ -43,34 +51,56 @@ def title_box(title_string, new_line = 0):
     # Return the result
     return card_string
 
+
 # Prints a blank line
 def blank_line():
     print("")
 
-# Takes user input and handles exceptions
-def input_loop(prompt, error, times):
+
+# LOOP - takes user input and handles exceptions
+def input_loop(prompt, accepted, times=3, mode="simple"):
     # This should give an initial prompt and an optionally customizable
     # error message. Probably I should use a Class here.
-    # If the user's input is not accepted it should show the error
-    # message (times) times before finally re-presenting the input.
-    # Every (times) times it will repeat the initial title card and 
-    # prompt.
-    pass
+    
+    i = 0 # Count how many times we've run
+    # Loop ends only when a valid input is given
+    while True:
+        # Take the user's input
+        # On the first and every times+1th iteration, show the full prompt
+        if i % (times + 1) == 0:
+            user_input = input(prompt + "\n: ")
+        else:
+            # Display the error message and re-prompt
+            user_input = input("I'm sorry, that input wasn't recognized. "
+                               "Please try again.\n: ")
+        blank_line()
+        # Check the input is among those accepted
+        if mode != "case-sensitive":
+            user_input = user_input.upper()
+            accepted = [item.upper() for item in accepted]
+        # The user can pass the wildcard "*" to accept all inputs
+        if (user_input in accepted) or (accepted == "*"):
+            # Successful input; exit loop and return value
+            return user_input
+        # If unsuccessful, go to the next iteration
+        i += 1
 
-# The loop that handles new deck creation (card and title input)
-# and saving the created deck to CSV
+# LOOP - handles new deck creation (card and title input)
+# and saves the created deck to CSV
 def deck_creation_loop():
+    # Print orienting information
     print(title_box("New Deck Creation Mode", 1))
     time.sleep(sleep_time)
     print("Each flash card should consist of two paired values.\n")
     time.sleep(sleep_time)
     print("These might be a question and an answer, a heading and what "
-          "falls under it, or just two things that belong together. \n")
+          "falls under it,\nor just two things that belong together. \n")
     time.sleep(sleep_time)
     print("Try to keep it consistent within each deck. But also, don't "
           "sweat it too much.\n")
     time.sleep(sleep_time)
 
+    # User input
     i = 0
     new_deck = []
     taking_content = True
@@ -94,29 +124,26 @@ def deck_creation_loop():
         print(f"\nGot it. Value A is '{valueA}'. Value B is '{valueB}'.")
         blank_line()
         i += 1
-
     deck_title = input("Finally, what title would you like to give "
             "this deck? (Up to 30 characters. This can be different "
             "to its file name.)\n: ")[:30]
 
     # Print out the completed deck, with title box
+    deck_size = len(new_deck)
+    num_width = len(str(deck_size + 1))
+    tab_size = num_width + 5
     print("\nGreat. Here's your deck in review:\n")
     time.sleep(sleep_time / 3)
     print(title_box(deck_title.upper(), 1))
     time.sleep(sleep_time / 3)
-    
-    # Loop through the cards in the deck and print them
-    deck_size = len(new_deck)
-    num_width = len(str(deck_size + 1))
-    tab_size = num_width + 5
     for i in range(deck_size):
-        # Print the first line
+        # Print the first line of our two-column table
         line_str = f"{i + 1}."
         for j in range(tab_size - len(line_str)):
             line_str += " "
         line_str += f"Side A.    {new_deck[i][0]}"
         print(line_str)
-        # Print the second line
+        # Print the second line of our two-column table
         line_str = ""
         for j in range(tab_size):
             line_str += " "
@@ -145,7 +172,6 @@ def deck_creation_loop():
     else:
         file_name_clean = file_name_handler(file_name, "csv",
                                             max_file_name_len)
-    
         # Open the file for writing
         with open(file_name_clean, "x", newline="") as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=",", \
@@ -155,39 +181,39 @@ def deck_creation_loop():
             # Loop through the new deck and write each line
             for card in new_deck:
                 csv_writer.writerow([card[0], card [1]])
-
+        # Give a lil progress bar simulation
         time.sleep(sleep_time / 3)
         for i in range(3):
             print(".")
             time.sleep(sleep_time / 3)
-
         print("\nDeck saved successfully.")
         blank_line()
 
+
 # LOOP - list all available files and return the user's selection
 def file_selection_loop():
-    screen = 0 # Tracks which screen of 10 files we're up to
+    # We list the available files in sections, page by page
+    page = 0
+    files_per_page = 10
     listing = True
-    final_screen = False
-    files_per_screen = 10
+    final_page = False
     print("Which deck would you like to open first?\n")
     while listing:
         list_size = len(file_list)
-        files_listed = screen * files_per_screen
+        files_listed = page * files_per_page
         print(f"Showing files {files_listed+1} to "
-              f"{files_listed+files_per_screen} of {list_size}.")
+              f"{files_listed+files_per_page} of {list_size}.")
         msg = "Enter a number to make a selection"
-        # Check this isn't the final screen of files
-        if (list_size < (screen + 1) * files_per_screen):
-            final_screen = True
+        # Check this isn't the final page of files
+        if (list_size < (page + 1) * files_per_page):
+            final_page = True
         else:
             msg += ", or press [Enter] to see more files"
-        # Should add a 'files x-x of x' message here
         print(msg + ".\n")
         # Print our two-column table of file numbers and file names
         num_width = len(str(list_size + 1))
         tab_size = num_width + 5
-        for i in range(files_listed, files_listed + files_per_screen):
+        for i in range(files_listed, files_listed + files_per_page):
             if i < list_size:
                 line_str = f"{i + 1}"
                 for j in range(tab_size - len(line_str)):
@@ -202,12 +228,13 @@ def file_selection_loop():
             # Get the file number user input
             file_number = input(": ")
             blank_line()
+            # ADD LATER - handle "CANCEL" input to return to menu
             # Strip out any character that isn't a number
             file_number = "".join(_ for _ in file_number
                                   if _ in "0123456789")
-            # If input is blank, move to the next screen
+            # If input is blank, move to the next page
             if file_number == "":
-                screen += 1
+                page += 1
                 taking_input = False # Exit the input loop
             else:
                 # Check the file number is in range
@@ -218,11 +245,13 @@ def file_selection_loop():
                             "Please try again.\n")
                     continue # Go back to the loop's beginning
                 # ADD LATER - Check the file still exists?
-                taking_input = False # Exit the input loop
-                # We now have the user's selection, so exit the listing loop
+                # We now have the user's selection, so exit both loops
+                taking_input = False
                 listing = False
-    # And return the result
+    
+    # Finally, return the result
     return file_number
+
 
 # Cleans up a file name ready for writing, and avoids
 # overwriting existing files
@@ -263,6 +292,8 @@ max_file_name_len = 40
 # Deliver welcome message and check for files
 # I'll replace this later with an ASCII title graphic
 print("Welcome to PyFlashCards!\n")
+#### BEGINNING OF CODE TO BECOME LOADING SCREEN / MAIN MENU
+#### def main_menu_loop():
 print("Loading cards . . .\n")
 time.sleep(sleep_time)
 
@@ -280,6 +311,7 @@ if (len(file_list) < 1):
 
     # At this point when properly functionized we'll return to 
     # what is now line 43
+    # main_menu_loop()
     print("Loading cards . . .\n")
     time.sleep(sleep_time)
 
@@ -287,30 +319,40 @@ if (len(file_list) < 1):
 else:
     # This will be the place to ask whether they'd like to open
     # an existing deck or make a new one one
+    prompt = ("Card decks found. Type LOAD to load, or MAKE "
+              "to create a new one.")
+    accepted = ["LOAD", "MAKE"]
+    user_input = input_loop(prompt, accepted)
+    blank_line()
+    if user_input == "LOAD":
+        print("Loading mode")
+    elif user_input == "MAKE":
+        # print("Creation mode")
+        deck_creation_loop()
 
     # Run the file selection loop and store the selected file number
     file_number = file_selection_loop()
 
     # . . . and load the chosen file
     with open(file_list[file_number - 1], "r") as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=",", \
+        csv_reader = csv.reader(csv_file, delimiter=",",
                 quotechar="^")
         loaded_deck = list(csv_reader)
         loaded_title = loaded_deck[0][0]
         print(title_box(loaded_title.upper(), 1))
         # Populate available cards list (this will be easy to methodize)
-        available_cards = [loaded_deck[i] for i in range(1, \
+        available_cards = [loaded_deck[i] for i in range(1,
                 len(loaded_deck))]
         # Ask the user for round size
         default_round_size = 10
-        round_size = input("How many cards would you like to be " \
-                "tested on per round? (Round size is capped at deck " \
+        round_size = input("How many cards would you like to be "
+                "tested on per round? (Round size is capped at deck "
                 "size.)\n: ")
         # Strip out non-numerical characters
         round_size = "".join(_ for _ in round_size if _ in "0123456789")
         # Set to default if blank
-        round_size = default_round_size if round_size == "" \
-                else int(round_size)
+        round_size = (default_round_size if round_size == ""
+                else int(round_size))
         # Cap round size at total deck size
         if round_size > len(available_cards):
             round_size = len(available_cards)
