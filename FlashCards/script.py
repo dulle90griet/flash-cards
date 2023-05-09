@@ -18,7 +18,9 @@ from copy import deepcopy
 class CardDeck:
     def __init__(self, title="User Flash Card Deck", cards=[]):
         self.title = title
-        self.cards = cards
+        # Next line inexplicably necessary to avoid all decks' 
+        # card lists being stored at the same address
+        self.cards = [] if cards == [] else cards
         self.size = len(cards)
 
     def add_card(self, sideA, sideB):
@@ -40,6 +42,8 @@ def load_deck(file):
     with open(file, "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=",", quotechar="^")
         loaded_deck = CardDeck()
+        print(loaded_deck.title)
+        print(loaded_deck.cards)
         i = 0
         for row in csv_reader:
             if i < 1 and len(row) < 2:
@@ -216,7 +220,7 @@ def testing_loop(loaded_deck):
         card_no = randint(0, testing_deck.size-1)
         cur_card = testing_deck.cards[card_no]
         # Print the card
-        print("Press [Enter] to flip the card."
+        print("Press [Enter] to flip the card. "
               "Side A:\n\n      " + cur_card[0] + "\n")
         user_input = input("")
         print("Side B:\n\n      " + cur_card[1] + "\n")
@@ -430,7 +434,7 @@ def deck_loading_loop(file_list):
 mypath = dirname(abspath(__file__))
 sleep_time = 1
 max_file_name_len = 40
-default_round_rize = 10
+default_round_size = 10
 files_per_page = 10
 
 # Deliver welcome message and check for files
