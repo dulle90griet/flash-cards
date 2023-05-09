@@ -300,6 +300,9 @@ def deck_creation_loop():
 
 # LOOP - list all available files and return the user's selection
 def deck_loading_loop():
+    # Print title box
+    print(title_box("Saved Deck Loading Mode", 1))
+    time.sleep(sleep_time / 3)
     # We list the available files in sections, page by page
     page = 0
     files_per_page = 10
@@ -307,32 +310,38 @@ def deck_loading_loop():
     final_page = False
     print("Which deck would you like to open first?\n")
     while listing:
-        list_size = len(file_list)
-        files_listed = page * files_per_page
-        print(f"Showing files {files_listed+1} to "
-              f"{files_listed+files_per_page} of {list_size}.")
-        msg = "Enter a number to make a selection"
-        # Check this isn't the final page of files
-        if (list_size < (page + 1) * files_per_page):
-            final_page = True
+        if final_page:
+            # The previous iteration already found the last page
+            print("All files already shown.\nEnter a number to make "
+                  "a selection.\n")
         else:
-            msg += ", or press [Enter] to see more files"
-        print(msg + ".\n")
-        # Print our two-column table of file numbers and file names
-        num_width = len(str(list_size + 1))
-        tab_size = num_width + 5
-        for i in range(files_listed, files_listed + files_per_page):
-            if i < list_size:
-                line_str = f"{i + 1}"
-                for j in range(tab_size - len(line_str)):
-                    line_str += " "
-                line_str += file_list[i]
-                print(line_str)
-        blank_line()
+            list_size = len(file_list)
+            files_listed = page * files_per_page
+            print(f"Showing files {files_listed+1} to "
+                  f"{files_listed+files_per_page} of {list_size}.")
+            msg = "Enter a number to make a selection"
+            # Check this isn't the final page of files
+            if (list_size < (page + 1) * files_per_page):
+                final_page = True
+            else:
+                msg += ", or press [Enter] to see more files"
+            print(msg + ".\n")
+            time.sleep(sleep_time / 3)
+            # Print our two-column table of file numbers and file names
+            num_width = len(str(list_size + 1))
+            tab_size = num_width + 5
+            for i in range(files_listed, files_listed + files_per_page):
+                if i < list_size:
+                    line_str = f"{i + 1}"
+                    for j in range(tab_size - len(line_str)):
+                        line_str += " "
+                    line_str += file_list[i]
+                    print(line_str)
+                    # time.sleep(sleep_time / 3)
+            blank_line()
 
         # User input loop for file selection
-        taking_input = True
-        while taking_input:
+        while True:
             # Get the file number user input
             file_number = input(": ")
             blank_line()
@@ -340,10 +349,11 @@ def deck_loading_loop():
             # Strip out any character that isn't a number
             file_number = "".join(_ for _ in file_number
                                   if _ in "0123456789")
+            time.sleep(sleep_time / 3)
             # If input is blank, move to the next page
             if file_number == "":
                 page += 1
-                taking_input = False # Exit the input loop
+                break
             else:
                 # Check the file number is in range
                 file_number = int(file_number)
@@ -354,8 +364,8 @@ def deck_loading_loop():
                     continue # Go back to the loop's beginning
                 # ADD LATER - Check the file still exists?
                 # We now have the user's selection, so exit both loops
-                taking_input = False
                 listing = False
+                break
     
     # Finally, return the result
     return file_number
@@ -434,17 +444,15 @@ else:
     user_input = input_loop(prompt, accepted)
     blank_line()
     if user_input == "LOAD":
-        print("Loading mode")
+        # Run the file selection loop and store the selected file number
+        file_number = deck_loading_loop()
+        # Load the chosen file and call the testing loop 
+        loaded_deck = load_deck(file_list[file_number - 1])
+        testing_loop(loaded_deck)
+        # print("Loading mode")
     elif user_input == "MAKE":
         # print("Creation mode")
         deck_creation_loop()
-
-    # Run the file selection loop and store the selected file number
-    file_number = deck_loading_loop()
-
-    # Load the chosen file and call the testing loop 
-    loaded_deck = load_deck(file_list[file_number - 1])
-    testing_loop(loaded_deck)
 
 blank_line()
 
