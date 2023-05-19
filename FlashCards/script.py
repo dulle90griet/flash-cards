@@ -1,10 +1,3 @@
-### TO DO LIST
-### > 'If not, PyFlashCards will quit.' - Instead return to main menu
-### > Replace user inputs with input_loop() handler wherever possible
-### > Require input and insert time.sleep before return from testing to main
-### > Ditto when answering "no" at end of round
-### > If user answers QUIT at main or loading menu, confirm once then quit
-
 import csv
 import time
 import re # Regex, for stripping illegal chars from file names
@@ -18,7 +11,7 @@ from copy import deepcopy
 class CardDeck:
     def __init__(self, title="User Flash Card Deck", cards=[]):
         self.title = title
-        # Next line inexplicably necessary to avoid all decks' 
+        # Next line inexplicably necessary to avoid all decks'
         # card lists being stored at the same address
         self.cards = [] if cards == [] else cards
         self.size = len(cards)
@@ -42,8 +35,6 @@ def load_deck(file):
     with open(file, "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=",", quotechar="^")
         loaded_deck = CardDeck()
-        print(loaded_deck.title)
-        print(loaded_deck.cards)
         i = 0
         for row in csv_reader:
             if i < 1 and len(row) < 2:
@@ -81,6 +72,34 @@ def title_box(title_string, tailing_lines = 0):
     return card_string
 
 
+# Cleans up a file name ready for writing, and avoids
+# overwriting existing files
+def file_name_handler(name, extension, max_len):
+    # Strip the filename of illegal characters
+    name = re.sub(r"\W+", "", name)
+
+    # If the filename is already taken, add a number to the end
+    i = 0
+    while isfile(name + "." + extension):
+        i += 1
+        affix_str = f"({i})"
+        # Calculate characters remaining after addition of affix
+        new_max_len = max_len - len(affix_str)
+        if i > 1:
+            # An affix already exists, so take its length
+            affix_len = len(name.split("(")[1]) + 1
+            # Use it to strip out the old affix
+            end_indx = len(name) - affix_len
+            name = name[:end_indx]
+        # Make sure there's space for the new affix, then add it
+        if len(name) > new_max_len:
+            name = name[:new_max_len]
+        name += affix_str
+
+    # Finally, add the filetype extension and return the result
+    return name + "." + extension
+
+
 # LOOP - takes user input and handles exceptions, with an initial prompt
 # and an optionally customizable error message
 def input_loop(prompt, accepted="*", times=3, numerical=False,
@@ -114,45 +133,36 @@ def input_loop(prompt, accepted="*", times=3, numerical=False,
         i += 1
 
 
-# Cleans up a file name ready for writing, and avoids
-# overwriting existing files
-def file_name_handler(name, extension, max_len):
-    # Strip the filename of illegal characters
-    name = re.sub(r"\W+", "", name)
-
-    # If the filename is already taken, add a number to the end
-    i = 0
-    while isfile(name + "." + extension):
-        i += 1
-        affix_str = f"({i})"
-        # Calculate characters remaining after addition of affix
-        new_max_len = max_len - len(affix_str)
-        if i > 1:
-            # An affix already exists, so take its length
-            affix_len = len(name.split("(")[1]) + 1
-            # Use it to strip out the old affix
-            end_indx = len(name) - affix_len
-            name = name[:end_indx]
-        # Make sure there's space for the new affix, then add it
-        if len(name) > new_max_len:
-            name = name[:new_max_len]
-        name += affix_str
-
-    # Finally, add the filetype extension and return the result
-    return name + "." + extension
+# LOOP - Confirm the user would like to quit
+def quit_confirm_loop():
+    accepted = ["","Y","YES","QUIT","EXIT","N","NO","CANCEL"]
+    user_input = input_loop("Are you sure you would like to quit?\n"
+                            "Type Y or press [Enter] to continue quit"
+                            "ting, or N or CANCEL to cancel.",
+                            accepted).upper()
+    blank_line()
+    if user_input in accepted[:5]:
+        print("Quitting PyFlashCards.")
+        time.sleep(sleep_time)
+        blank_line()
+        exit()
+    elif user_input in accepted[5:]:
+        return False
 
 
 # LOOP - manu menu
-def main_menu_loop():
-    print("Loading cards . . .\n")
-    time.sleep(sleep_time)
+def main_menu_loop(load=True):
+    if load:
+        print("Loading cards . . .\n")
+        time.sleep(sleep_time)
 
-    # Create a list of CSVs in the script's directory
-    # Later I need to update this to use Python 3's os.scandir iterator
-    file_list = [f for f in listdir(mypath) if isfile(join(mypath, f))
-                 and f.lower()[-4:] == ".csv"]
-    # Sort the list of files alphabetically, without regard for capitals
-    file_list.sort(key=str.lower)
+        # Create a list of CSVs in the script's directory
+        # Later I need to update this to use Py3's os.scandir iterator
+        file_list = [f for f in listdir(mypath)
+                     if isfile(join(mypath, f))
+                     and f.lower()[-4:] == ".csv"]
+        # Sort the list of files alphabetically, w/o regard for capitals
+        file_list.sort(key=str.lower)
 
     # If there are no CSVs yet, prompt the user to create one
     if (len(file_list) < 1):
@@ -163,18 +173,23 @@ def main_menu_loop():
         # Print title box
         print(title_box("Main Menu", 1))
         # Take user input
-        accepted = ["LOAD", "MAKE"]
+        accepted = ["LOAD","MAKE","QUIT","EXIT"]
         user_input = input_loop("Card decks found. Type LOAD to load, "
                                 "or MAKE to create a new one.", accepted)
         blank_line()
         if user_input == "LOAD":
-            # Run the file selection loop and store the selected file number
+            # Run the file selection loop and store the file number
             file_number = deck_loading_loop(file_list)
             # Load the chosen file and call the testing loop 
             loaded_deck = load_deck(file_list[file_number])
             testing_loop(loaded_deck)
         elif user_input == "MAKE":
+            # Call the deck creation loop
             deck_creation_loop(file_list)
+        elif user_input in ["QUIT","EXIT"]:
+            # Call the quit confirm loop
+            if not quit_confirm_loop():
+                main_menu_loop(load=False)
 
     blank_line()
 
@@ -207,10 +222,11 @@ def testing_loop(loaded_deck):
         if asked_this_round >= round_size:
             print(f"Round complete! So far you've got {questions_correct}"
                   f" of {asked_total} correct.\n")
-            user_input = input("Do you want to continue? [Y/N] "
+            user_input = input("Do you want to continue? Type Y or press "
+                               "[Enter] for 'yes', N for 'no'.] "
                     "\n: ").upper()
             blank_line()
-            if user_input == "N":
+            if user_input not in ["N", "NO"]:
                 # End the testing session
                 break
             else:
@@ -241,16 +257,22 @@ def testing_loop(loaded_deck):
                     f"You got {questions_correct} of "
                     f"{asked_total} correct.")
             user_input = input("Would you like to test yourself on this "
-                               "deck again? [Y/N]\n: ").upper()
+                               "deck again? Type Y or press [Enter] for "
+                               "'yes', N for 'no'.\n: ").upper()
             blank_line()
-            if user_input not in ["N", "NO"]:
+            if user_input not in ["N","NO"]:
                 # Restart the testing session
                 testing_loop(loaded_deck)
+            elif user_input in ["QUIT","EXIT"]:
+                # Allow the user to quit directly from this point
+                quit_confirm_loop()
             # Otherwise, end the testing session
             break
         # If we are continuing, re-print the deck's title
         print(title_box(testing_deck.title.upper(), 1))
     # The testing loop over, return to the main menu
+    print("Returning to main menu.\n")
+    time.sleep(sleep_time)
     main_menu_loop()
     
 
@@ -292,11 +314,11 @@ def deck_creation_loop(file_list):
         i += 1
     blank_line()
     new_deck.title = input("Finally, what title would you like to give "
-            "this deck? (Up to 30 characters.\nThis can be different "
-            "to its file name.)\n: ")[:30]
+            f"this deck? (Up to {max_title_len} characters.\nThis can be "
+            "different to its file name.)\n: ")[:max_title_len]
 
     # Print out the completed deck, with title box
-    num_width = len(new_deck.size + 1)
+    num_width = len(str(new_deck.size + 1))
     tab_size = num_width + 5
     print("\nGreat. Here's your deck in review:\n")
     time.sleep(sleep_time / 3)
@@ -328,8 +350,9 @@ def deck_creation_loop(file_list):
     if file_name.upper() == "CANCEL":
         print("Cancelling.\n")
         time.sleep(sleep_time)
-        restart = input("Would you like to start again? [Y/N]\n").upper()
-        if(restart in ["Y", "YES", ""]):
+        restart = input("Would you like to start again? Type Y for 'yes',"
+                        "N or [Enter] for 'no'.\n").upper()
+        if restart in ["Y", "YES"]:
             deck_creation_loop(file_list)
         else:
             print("Quitting New Deck Creation Mode.\n")
@@ -380,7 +403,7 @@ def deck_loading_loop(file_list):
                   f"{files_listed+files_per_page} of {list_size}.")
             msg = "Enter a number to make a selection"
             # Check this isn't the final page of files
-            if (list_size < (page + 1) * files_per_page):
+            if (list_size <= (page + 1) * files_per_page):
                 final_page = True
             else:
                 msg += ", or press [Enter] to see more files"
@@ -402,9 +425,16 @@ def deck_loading_loop(file_list):
         # User input loop for file selection
         while True:
             # Get the file number user input
-            file_number = input(": ")
+            file_number = input(": ").upper()
             blank_line()
-            # ADD LATER - handle "CANCEL" input to return to menu
+            # Handle CANCEL, QUIT and EXIT inputs
+            if file_number == "CANCEL":
+                print("You asked to CANCEL. Returning to main menu.\n")
+                main_menu_loop()
+            elif file_number in ["QUIT","EXIT"]:
+                if not quit_confirm_loop():
+                    # User cancelled quit; reload same page
+                    break
             # Strip out any character that isn't a number
             file_number = "".join(_ for _ in file_number
                                   if _ in "0123456789")
@@ -434,6 +464,7 @@ def deck_loading_loop(file_list):
 mypath = dirname(abspath(__file__))
 sleep_time = 1
 max_file_name_len = 40
+max_title_len = 30
 default_round_size = 10
 files_per_page = 10
 
