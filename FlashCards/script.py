@@ -102,7 +102,8 @@ def file_name_handler(name, extension, max_len):
 
 # LOOP - takes user input and handles exceptions, with an initial prompt
 # and an optionally customizable error message
-def input_loop(prompt, accepted="*", times=3, numerical=False,
+def input_loop(prompt, accepted="*", times=3, blank_allowed=False, 
+               cancellable=False, quittable=False, numerical=False,
                case_sensitive=False,
                err_msg = ("I'm sorry, that input wasn't recognised. "
                           "Please try again.")):
@@ -120,7 +121,12 @@ def input_loop(prompt, accepted="*", times=3, numerical=False,
         # If we don't want case-sensitivity, make all upper-case
         if not case_sensitive:
             user_input = user_input.upper()
-            accepted = [item.upper() for item in accepted]
+            accepted = [str(item).upper() for item in accepted]
+        # If allowing cancel or quit, handle those inputs first
+        if ((cancellable and user_input == "CANCEL") 
+            or (quittable and user_input in ["QUIT","EXIT"]) 
+            or (blank_allowed and user_input == "")):
+            return user_input
         # If expecting a number only, strip out all but numbers
         if numerical:
             user_input = "".join(_ for _ in user_input
@@ -166,9 +172,10 @@ def main_menu_loop(load=True):
 
     # If there are no CSVs yet, prompt the user to create one
     if (len(file_list) < 1):
+        print("It looks like no card decks exist. Let's create one.\n")
         deck_creation_loop(file_list)
 
-    # Otherwise, files exist, so give the user the loading list
+    # Otherwise, files exist, so give the user the choice
     else:
         # Print title box
         print(title_box("Main Menu", 1))
@@ -193,88 +200,6 @@ def main_menu_loop(load=True):
 
     blank_line()
 
-
-# LOOP - the core function of PyFlashCards: testing the user on cards!
-def testing_loop(loaded_deck):
-    # Make a destructible copy of the loaded deck
-    testing_deck = deepcopy(loaded_deck)
-    # Print the current deck's title card
-    print(title_box(testing_deck.title.upper(), 1))
-
-    # Ask the user for round size
-    prompt = ("How many cards would you like to be tested on per round?\n"
-              "(Round size is capped at deck size.)")
-    round_size = input_loop(prompt, numerical=True)
-    # Set to default if blank
-    round_size = (default_round_size if round_size == ""
-                  else int(round_size))
-    # Cap round size at total deck size
-    if round_size > testing_deck.size:
-        round_size = testing_deck.size
-    blank_line()
-
-    # Begin the testing loop
-    asked_total = 0
-    asked_this_round = 0
-    questions_correct = 0
-    while True:
-        # First, check whether we've already finished the round
-        if asked_this_round >= round_size:
-            print(f"Round complete! So far you've got {questions_correct}"
-                  f" of {asked_total} correct.\n")
-            user_input = input("Do you want to continue? Type Y or press "
-                               "[Enter] for 'yes', N for 'no'.] "
-                    "\n: ").upper()
-            blank_line()
-            if user_input not in ["N", "NO"]:
-                # End the testing session
-                break
-            else:
-                # Initiate the new round
-                asked_this_round = 0
-        # Randomly select one of the available cards
-        card_no = randint(0, testing_deck.size-1)
-        cur_card = testing_deck.cards[card_no]
-        # Print the card
-        print("Press [Enter] to flip the card. "
-              "Side A:\n\n      " + cur_card[0] + "\n")
-        user_input = input("")
-        print("Side B:\n\n      " + cur_card[1] + "\n")
-        user_input = input("Type Y or press [Enter] if right. "
-                "Type N if wrong.\n").upper()
-        blank_line()
-        if user_input not in ["N", "NO"]:
-            # Increment the correct answers counter
-            questions_correct += 1
-        # Increment the questions asked counters
-        asked_total += 1
-        asked_this_round += 1
-        # Remove the card from the working deck
-        testing_deck.remove_card(card_no)
-        # Check whether we've exhausted the deck, and end if so
-        if testing_deck.size < 1:
-            print("Well done! You've completed the deck. "
-                    f"You got {questions_correct} of "
-                    f"{asked_total} correct.")
-            user_input = input("Would you like to test yourself on this "
-                               "deck again? Type Y or press [Enter] for "
-                               "'yes', N for 'no'.\n: ").upper()
-            blank_line()
-            if user_input not in ["N","NO"]:
-                # Restart the testing session
-                testing_loop(loaded_deck)
-            elif user_input in ["QUIT","EXIT"]:
-                # Allow the user to quit directly from this point
-                quit_confirm_loop()
-            # Otherwise, end the testing session
-            break
-        # If we are continuing, re-print the deck's title
-        print(title_box(testing_deck.title.upper(), 1))
-    # The testing loop over, return to the main menu
-    print("Returning to main menu.\n")
-    time.sleep(sleep_time)
-    main_menu_loop()
-    
 
 # LOOP - handles new deck creation (card and title input)
 # and saves the created deck to CSV
@@ -425,9 +350,13 @@ def deck_loading_loop(file_list):
         # User input loop for file selection
         while True:
             # Get the file number user input
-            file_number = input(": ").upper()
-            blank_line()
-            # Handle CANCEL, QUIT and EXIT inputs
+            accepted = list(range(1, list_size + 1))
+            err_msg = ("There isn't a file with that number. "
+                       "Please try again.")
+            file_number = input_loop("", accepted, blank_allowed=True,
+                                     cancellable=True, quittable=True,
+                                     numerical=True, err_msg=err_msg)
+            # Handle the non-numerical inputs first
             if file_number == "CANCEL":
                 print("You asked to CANCEL. Returning to main menu.\n")
                 main_menu_loop()
@@ -435,30 +364,101 @@ def deck_loading_loop(file_list):
                 if not quit_confirm_loop():
                     # User cancelled quit; reload same page
                     break
-            # Strip out any character that isn't a number
-            file_number = "".join(_ for _ in file_number
-                                  if _ in "0123456789")
-            time.sleep(sleep_time / 3)
-            # If input is blank, move to the next page
-            if file_number == "":
-                page += 1
+            elif file_number == "":
+                # The user just hit [Enter], so move to the next page
+                page +=1
                 break
             else:
-                # Check the file number is in range
-                file_number = int(file_number)
-                if file_number > (list_size + 1):
-                    # If out of range, print an error message
-                    print("There isn't a file with that number. "
-                            "Please try again.\n")
-                    continue # Go back to the loop's beginning
-                # ADD LATER - Check the file still exists?
-                # We now have the user's selection, so exit both loops
+                # The user's selection is numerical and in range, so
+                # exit both loops
                 listing = False
                 break
     
     # Finally, return the result
-    return file_number - 1
+    return int(file_number) - 1
 
+
+# LOOP - the core function of PyFlashCards: testing the user on cards!
+def testing_loop(loaded_deck):
+    # Make a destructible copy of the loaded deck
+    testing_deck = deepcopy(loaded_deck)
+    # Print the current deck's title card
+    print(title_box(testing_deck.title.upper(), 1))
+
+    # Ask the user for round size
+    prompt = ("How many cards would you like to be tested on per round?\n"
+              "(Round size is capped at deck size.)")
+    round_size = input_loop(prompt, numerical=True)
+    # Set to default if blank
+    round_size = (default_round_size if round_size in ["", "0"]
+                  else int(round_size))
+    # Cap round size at total deck size
+    if round_size > testing_deck.size:
+        round_size = testing_deck.size
+    blank_line()
+
+    # Begin the testing loop
+    asked_total = 0
+    asked_this_round = 0
+    questions_correct = 0
+    while True:
+        # First, check whether we've already finished the round
+        if asked_this_round >= round_size:
+            print(f"Round complete! So far you've got {questions_correct}"
+                  f" of {asked_total} correct.\n")
+            user_input = input("Do you want to continue? Type Y or press "
+                               "[Enter] for 'yes', N for 'no'."
+                                "\n: ").upper()
+            blank_line()
+            if user_input not in ["N", "NO"]:
+                # End the testing session
+                break
+            else:
+                # Initiate the new round
+                asked_this_round = 0
+        # Randomly select one of the available cards
+        card_no = randint(0, testing_deck.size-1)
+        cur_card = testing_deck.cards[card_no]
+        # Print the card
+        print("Press [Enter] to flip the card. "
+              "Side A:\n\n      " + cur_card[0] + "\n")
+        user_input = input("")
+        print("Side B:\n\n      " + cur_card[1] + "\n")
+        user_input = input("Type Y or press [Enter] if right. "
+                "Type N if wrong.\n").upper()
+        blank_line()
+        if user_input not in ["N", "NO"]:
+            # Increment the correct answers counter
+            questions_correct += 1
+        # Increment the questions asked counters
+        asked_total += 1
+        asked_this_round += 1
+        # Remove the card from the working deck
+        testing_deck.remove_card(card_no)
+        # Check whether we've exhausted the deck, and end if so
+        if testing_deck.size < 1:
+            print("Well done! You've completed the deck. "
+                    f"You got {questions_correct} of "
+                    f"{asked_total} correct.")
+            user_input = input("Would you like to test yourself on this "
+                               "deck again? Type Y or press [Enter] for "
+                               "'yes', N for 'no'.\n: ").upper()
+            blank_line()
+            if user_input not in ["N","NO"]:
+                # Restart the testing session
+                testing_loop(loaded_deck)
+            elif user_input in ["QUIT","EXIT"]:
+                # Allow the user to quit directly from this point
+                quit_confirm_loop()
+            # Otherwise, end the testing session
+            break
+        # If we are continuing, re-print the deck's title
+        print(title_box(testing_deck.title.upper(), 1))
+    # The testing loop over, return to the main menu
+    print("Returning to main menu.\n")
+    time.sleep(sleep_time)
+    main_menu_loop()
+    
 
 # Define variables
 mypath = dirname(abspath(__file__))
