@@ -30,6 +30,11 @@ def blank_line():
     print("")
 
 
+# Prints a dividing line
+def divider():
+    print("========================================\n")
+
+
 # Loads a CSV file into a CardDeck object
 def load_deck(file):
     with open(file, "r") as csv_file:
@@ -158,6 +163,8 @@ def quit_confirm_loop():
 
 # LOOP - manu menu
 def main_menu_loop(load=True):
+    divider()
+
     if load:
         print("Loading cards . . .\n")
         time.sleep(sleep_time)
@@ -204,6 +211,8 @@ def main_menu_loop(load=True):
 # LOOP - handles new deck creation (card and title input)
 # and saves the created deck to CSV
 def deck_creation_loop(file_list):
+    divider()
+
     # Print orienting information
     print(title_box("New Deck Creation Mode", 1))
     time.sleep(sleep_time)
@@ -276,7 +285,7 @@ def deck_creation_loop(file_list):
         print("Cancelling.\n")
         time.sleep(sleep_time)
         restart = input("Would you like to start again? Type Y for 'yes',"
-                        "N or [Enter] for 'no'.\n").upper()
+                        " N or [Enter] for 'no'.\n").upper()
         if restart in ["Y", "YES"]:
             deck_creation_loop(file_list)
         else:
@@ -307,6 +316,8 @@ def deck_creation_loop(file_list):
 
 # LOOP - list all available files and return the user's selection
 def deck_loading_loop(file_list):
+    divider()
+
     # Print title box
     print(title_box("Saved Deck Loading Mode", 1))
     time.sleep(sleep_time / 3)
@@ -380,6 +391,8 @@ def deck_loading_loop(file_list):
 
 # LOOP - the core function of PyFlashCards: testing the user on cards!
 def testing_loop(loaded_deck):
+    divider()
+
     # Make a destructible copy of the loaded deck
     testing_deck = deepcopy(loaded_deck)
     # Print the current deck's title card
@@ -410,7 +423,7 @@ def testing_loop(loaded_deck):
                                "[Enter] for 'yes', N for 'no'."
                                 "\n: ").upper()
             blank_line()
-            if user_input not in ["N", "NO"]:
+            if user_input in ["N", "NO"]:
                 # End the testing session
                 break
             else:
@@ -467,9 +480,24 @@ max_file_name_len = 40
 max_title_len = 30
 default_round_size = 10
 files_per_page = 10
+ASCII_title = (
+        "888888ba            88888888b dP                   dP       "
+        " a88888b.                         dP\n"
+        "88    `8b           88        88                   88       "
+        "d8'   `88                         88\n"
+        "88aaaa8P' dP    dP a88aaaa    88 .d8888b. .d8888b. 88d888b. "
+        "88        .d8888b. 88d888b. .d888b88 .d8888b.\n"
+        "88        88    88  88        88 88'  `88 Y8ooooo. 88'  `88 "
+        "88        88'  `88 88'  `88 88'  `88 Y8ooooo.\n"
+        "88        88.  .88  88        88 88.  .88       88 88    88 "
+        "Y8.   .88 88.  .88 88       88.  .88       88\n"
+        "dP        `8888P88  dP        dP `88888P8 `88888P' dP    dP "
+        " Y88888P' `88888P8 dP       `88888P8 `88888P'\n"
+        "               .88\n"
+        "            d8888P\n")
 
 # Deliver welcome message and check for files
-# I'll replace this later with an ASCII title graphic
+print(ASCII_title)
 print("Welcome to PyFlashCards!\n")
 
 main_menu_loop()
