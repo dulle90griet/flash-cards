@@ -145,7 +145,7 @@ def input_loop(prompt, accepted="*", times=3, blank_allowed=False,
 
 
 # LOOP - Confirm the user would like to quit
-def quit_confirm_loop():
+def quit_confirm():
     accepted = ["","Y","YES","QUIT","EXIT","N","NO","CANCEL"]
     user_input = input_loop("Are you sure you would like to quit?\n"
                             "Type Y or press [Enter] to continue quit"
@@ -202,7 +202,7 @@ def main_menu_loop(load=True):
             deck_creation_loop(file_list)
         elif user_input in ["QUIT","EXIT"]:
             # Call the quit confirm loop
-            if not quit_confirm_loop():
+            if not quit_confirm():
                 main_menu_loop(load=False)
 
     blank_line()
@@ -325,25 +325,28 @@ def deck_loading_loop(file_list):
     page = 0
     files_per_page = 10
     listing = True
-    final_page = False
+    final_page_shown = False
     print("Which deck would you like to open first?\n")
     while listing:
-        if final_page:
+        if final_page_shown:
             # The previous iteration already found the last page
             print("All files already shown.\nEnter a number to make "
                   "a selection.\n")
         else:
             list_size = len(file_list)
             files_listed = page * files_per_page
-            print(f"Showing files {files_listed+1} to "
-                  f"{files_listed+files_per_page} of {list_size}.")
-            msg = "Enter a number to make a selection"
             # Check this isn't the final page of files
             if (list_size <= (page + 1) * files_per_page):
-                final_page = True
+                final_page_shown = True
+                page_last_file = list_size
+                addendum = ""
             else:
-                msg += ", or press [Enter] to see more files"
-            print(msg + ".\n")
+                page_last_file = files_listed + files_per_page
+                addendum = ", or press [Enter] to see more files"
+            msg = (f"Showing files {files_listed+1} to "
+                   f"{page_last_file} of {list_size}.\n"
+                   "Enter a number to make a selection")
+            print(msg + addendum + ".\n")
             time.sleep(sleep_time / 3)
             # Print our two-column table of file numbers and file names
             num_width = len(str(list_size + 1))
@@ -372,7 +375,7 @@ def deck_loading_loop(file_list):
                 print("You asked to CANCEL. Returning to main menu.\n")
                 main_menu_loop()
             elif file_number in ["QUIT","EXIT"]:
-                if not quit_confirm_loop():
+                if not quit_confirm():
                     # User cancelled quit; reload same page
                     break
             elif file_number == "":
@@ -402,6 +405,7 @@ def testing_loop(loaded_deck):
     prompt = ("How many cards would you like to be tested on per round?\n"
               "(Round size is capped at deck size.)")
     round_size = input_loop(prompt, numerical=True)
+    time.sleep(sleep_time/3)
     # Set to default if blank
     round_size = (default_round_size if round_size in ["", "0"]
                   else int(round_size))
@@ -438,7 +442,7 @@ def testing_loop(loaded_deck):
         user_input = input("")
         print("Side B:\n\n      " + cur_card[1] + "\n")
         user_input = input("Type Y or press [Enter] if right. "
-                "Type N if wrong.\n").upper()
+                           "Type N if wrong.\n: ").upper()
         blank_line()
         if user_input not in ["N", "NO"]:
             # Increment the correct answers counter
@@ -462,7 +466,7 @@ def testing_loop(loaded_deck):
                 testing_loop(loaded_deck)
             elif user_input in ["QUIT","EXIT"]:
                 # Allow the user to quit directly from this point
-                quit_confirm_loop()
+                quit_confirm()
             # Otherwise, end the testing session
             break
         # If we are continuing, re-print the deck's title
@@ -481,17 +485,17 @@ max_title_len = 30
 default_round_size = 10
 files_per_page = 10
 ASCII_title = (
-        "888888ba            88888888b dP                   dP       "
+        "888888ba           88888888b dP                   dP       "
         " a88888b.                         dP\n"
-        "88    `8b           88        88                   88       "
+        "88    `8b          88        88                   88       "
         "d8'   `88                         88\n"
-        "88aaaa8P' dP    dP a88aaaa    88 .d8888b. .d8888b. 88d888b. "
+        "88aaaa8P' dP    dP 88aaaa    88 .d8888b. .d8888b. 88d888b. "
         "88        .d8888b. 88d888b. .d888b88 .d8888b.\n"
-        "88        88    88  88        88 88'  `88 Y8ooooo. 88'  `88 "
+        "88        88    88 88        88 88'  `88 Y8ooooo. 88'  `88 "
         "88        88'  `88 88'  `88 88'  `88 Y8ooooo.\n"
-        "88        88.  .88  88        88 88.  .88       88 88    88 "
+        "88        88.  .88 88        88 88.  .88       88 88    88 "
         "Y8.   .88 88.  .88 88       88.  .88       88\n"
-        "dP        `8888P88  dP        dP `88888P8 `88888P' dP    dP "
+        "dP        `8888P88 dP        dP `88888P8 `88888P' dP    dP "
         " Y88888P' `88888P8 dP       `88888P8 `88888P'\n"
         "               .88\n"
         "            d8888P\n")
