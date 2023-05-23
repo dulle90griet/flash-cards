@@ -144,8 +144,8 @@ def input_loop(prompt, accepted="*", times=3, blank_allowed=False,
         i += 1
 
 
-# LOOP - Confirm the user would like to quit
-def quit_confirm():
+# Confirm the user would like to quit
+def confirm_quit():
     accepted = ["","Y","YES","QUIT","EXIT","N","NO","CANCEL"]
     user_input = input_loop("Are you sure you would like to quit?\n"
                             "Type Y or press [Enter] to continue quit"
@@ -161,7 +161,7 @@ def quit_confirm():
         return False
 
 
-# LOOP - manu menu
+# LOOP - main menu
 def main_menu_loop(load=True):
     divider()
 
@@ -202,7 +202,7 @@ def main_menu_loop(load=True):
             deck_creation_loop(file_list)
         elif user_input in ["QUIT","EXIT"]:
             # Call the quit confirm loop
-            if not quit_confirm():
+            if not confirm_quit():
                 main_menu_loop(load=False)
 
     blank_line()
@@ -375,7 +375,7 @@ def deck_loading_loop(file_list):
                 print("You asked to CANCEL. Returning to main menu.\n")
                 main_menu_loop()
             elif file_number in ["QUIT","EXIT"]:
-                if not quit_confirm():
+                if not confirm_quit():
                     # User cancelled quit; reload same page
                     break
             elif file_number == "":
@@ -466,7 +466,7 @@ def testing_loop(loaded_deck):
                 testing_loop(loaded_deck)
             elif user_input in ["QUIT","EXIT"]:
                 # Allow the user to quit directly from this point
-                quit_confirm()
+                confirm_quit()
             # Otherwise, end the testing session
             break
         # If we are continuing, re-print the deck's title
